@@ -70,8 +70,10 @@ flowchart LR
      product across 30+ chains (exact barcode for global items, text similarity for chain-internal items) and keeps a
      unified catalog.
 5. **Serve.** A processing pipeline consumes Kafka, loads the data into PostgreSQL and backs the public API, live at
-   [data.openisraelisupermarkets.co.il](https://data.openisraelisupermarkets.co.il/), and the website. These services, and the deployment that wires everything together with Docker Compose, live in private
-   repositories for now.
+   [data.openisraelisupermarkets.co.il](https://data.openisraelisupermarkets.co.il/), and the website. The live
+   deployment (Kafka, PostgreSQL, the data fetcher, the ETL pipeline, the API, the website and the tunnel that exposes
+   them) is defined with Docker Compose in [`erlichsefi/supermarket-pipeline`](https://github.com/erlichsefi/supermarket-pipeline)
+   (private for now).
 6. **Monitor.** [`Status`](https://github.com/OpenIsraeliSupermarkets/Status) checks the website and API every 5
    minutes and the Kaggle dataset's freshness every hour from GitHub Actions, publishes the results as a status page,
    and alerts on Discord when a check fails or recovers. The scrapers and parsers also run their test suites daily
@@ -90,6 +92,7 @@ flowchart LR
 | [address-resolution-service](https://github.com/OpenIsraeliSupermarkets/address-resolution-service) | Resolves store addresses to city, street, ZIP and lat/lon | Python library |
 | [product-matching-service](https://github.com/OpenIsraeliSupermarkets/product-matching-service) | Matches products across chains and maintains a unified catalog | Python library + batch scripts |
 | [Status](https://github.com/OpenIsraeliSupermarkets/Status) | Public status page and alerting | GitHub Actions + GitHub Pages |
+| [erlichsefi/supermarket-pipeline](https://github.com/erlichsefi/supermarket-pipeline) (private) | Defines and deploys the live stack behind data.openisraelisupermarkets.co.il | Docker Compose |
 
 The two packages keep their chain lists in sync: every parser name in `ParserFactory` must match a scraper in
 `ScraperFactory`, which the parsers' tests enforce.
