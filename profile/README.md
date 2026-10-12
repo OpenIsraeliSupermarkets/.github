@@ -9,6 +9,7 @@ chain, parse the files, publish a daily dataset, and serve cleaned, linked data 
 
 - 📦 **Daily dataset:** [erlichsefi/israeli-supermarkets-2024 on Kaggle](https://www.kaggle.com/datasets/erlichsefi/israeli-supermarkets-2024)
 - 🌐 **Website:** [openisraelisupermarkets.co.il](https://www.openisraelisupermarkets.co.il/)
+- 🔌 **API (live):** [data.openisraelisupermarkets.co.il](https://data.openisraelisupermarkets.co.il/)
 - 🟢 **Status page:** [openisraelisupermarkets.github.io/Status](https://openisraelisupermarkets.github.io/Status/)
 
 ---
@@ -68,8 +69,8 @@ flowchart LR
    - [`product-matching-service`](https://github.com/OpenIsraeliSupermarkets/product-matching-service) finds the same
      product across 30+ chains (exact barcode for global items, text similarity for chain-internal items) and keeps a
      unified catalog.
-5. **Serve.** A processing pipeline consumes Kafka, loads the data into PostgreSQL and backs the public API and the
-   website. These services, and the deployment that wires everything together with Docker Compose, live in private
+5. **Serve.** A processing pipeline consumes Kafka, loads the data into PostgreSQL and backs the public API, live at
+   [data.openisraelisupermarkets.co.il](https://data.openisraelisupermarkets.co.il/), and the website. These services, and the deployment that wires everything together with Docker Compose, live in private
    repositories for now.
 6. **Monitor.** [`Status`](https://github.com/OpenIsraeliSupermarkets/Status) checks the website and API every 5
    minutes and the Kaggle dataset's freshness every hour from GitHub Actions, publishes the results as a status page,
