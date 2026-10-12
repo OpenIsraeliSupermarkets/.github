@@ -61,7 +61,8 @@ flowchart LR
    runs scraping and parsing in a loop through the day, pushes rows to short-term storage (Kafka in production),
    publishes a new version of the Kaggle dataset at midnight, and serves a raw-data API. A heartbeat health check
    restarts the service if it stalls.
-4. **Link, clean and enrich.** Three libraries make the raw rows comparable across chains:
+4. **Link, clean and enrich.** Three libraries make the raw rows comparable across chains. Wiring the first two into
+   the processing pipeline is the current work (see [Roadmap](#roadmap)):
    - [`schema-linking-service`](https://github.com/OpenIsraeliSupermarkets/schema-linking-service) maps each chain's
      columns to the fields the law defines, fixes or flags every value, and scores data quality per field.
    - [`address-resolution-service`](https://github.com/OpenIsraeliSupermarkets/address-resolution-service) resolves
@@ -108,48 +109,45 @@ lookups (geocoding, Israel Post ZIPs, LLM research) are cached in Kaggle dataset
 
 ## Roadmap
 
-### Next goal: public supermarket data website
+### ✅ Done: low-latency ingestion and a live API
 
-- **Goal:** a GA application to access supermarket data, for anyone who reads the chains' sites directly today.
-- **How:** stable remote infrastructure; an API that supports a few dozen customers; reliable data processing; data
-  served in each chain's schema; only daily data in the API; understanding minimal hosting requirements.
-- **Additional goals:** host a hackathon on data-science challenges built from the Kaggle dataset; create a landing
-  page.
+- Scrapers stream each file into a queue as soon as it is downloaded, and parsers read from that queue instead of
+  disk.
+- Parsed rows go to Kafka for the processing pipeline, and a new Kaggle dataset version is published every night.
+- The public API is live at [data.openisraelisupermarkets.co.il](https://data.openisraelisupermarkets.co.il/), with
+  the website on top of it and a [status page](https://openisraelisupermarkets.github.io/Status/) that alerts on
+  failures.
 
-### V1: Reducing latency
+### 🚧 Now: data quality, one correct schema across all chains
 
-- **Scrapers:** write XML to a stream instead of disk; one queue per chain; write execution status to a database
-  instead of JSON files.
-- **Parsers:** pull from the queue instead of disk; write parsed results per file type and chain, keeping all
-  versions; investigate further latency reductions.
-- **Stability:** scraper stress tests (impact of CPU allocation on timeouts); error analysis so Kaggle gets correct
-  data.
-- **Kaggle dump:** turn the short-term store into a Kaggle dataset version and publish it.
+Every chain publishes the law's fields under its own column names and value formats, so the database schema is only
+as correct as the mapping into it. The `data-quality` branch of the processing pipeline replaces its hand-written
+transforms with the shared libraries:
 
-### V2: One schema across all chains, and search
+- [`schema-linking-service`](https://github.com/OpenIsraeliSupermarkets/schema-linking-service) links each chain's
+  columns to the law's fields and normalizes values (barcodes, units, country codes and more) before they are mapped
+  into the database.
+- [`address-resolution-service`](https://github.com/OpenIsraeliSupermarkets/address-resolution-service) resolves every
+  store to a validated city, street, ZIP code and coordinates (stores now carry lat/lon).
+- Golden-output capture and comparison scripts check that the migration doesn't change data it shouldn't.
+- Both libraries are tuned against labeled data with the [accuracy loop](#accuracy-loop), and schema linking scores
+  completeness and validity per field.
 
-- **Customers:** GenAI applications.
-- **Schema linking:** link schemas between chains and compute product prices across chains.
-- **Promotions:** apply promotions to product prices.
-- **Schema transformation:** run schema transformations on a CSV and evaluate them on random Kaggle versions.
-- **Search:** text search across any textual column, with merging and pre-filtering of results; support search
-  from natural-language queries.
-
-### V3: Product comparison
+### Next: product comparison
 
 - **Customers:** comparison applications and price-comparison platforms.
-- **How:** minimal retention for in-day changes; an **Alternatives API** that finds equivalent products across
-  chains.
+- **How:** bring [`product-matching-service`](https://github.com/OpenIsraeliSupermarkets/product-matching-service)
+  into the pipeline and expose an **Alternatives API** that finds equivalent products across chains; apply
+  promotions to product prices; keep minimal retention for in-day changes.
 
-### V4: Time-series analysis
+### Later
 
-- **Customers:** price prediction and trend detection.
-- **How:** load the historical Kaggle data into the database.
-
-### V5: Monitoring and user access
-
-- **Customers:** internal stakeholders and users.
-- **How:** a monitoring page for pipeline status and a page publishing data-quality metrics.
+- **Search:** text search across any textual column, including from natural-language queries, for GenAI
+  applications.
+- **Time-series analysis:** load the historical Kaggle data into the database for price prediction and trend
+  detection.
+- **Data-quality visibility:** publish the per-field quality metrics on a public page next to the pipeline status.
+- **Community:** a hackathon on data-science challenges built from the Kaggle dataset.
 
 ---
 
